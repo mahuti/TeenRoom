@@ -3,155 +3,73 @@
 // Theme by Mahuti
 // vs. 1.1
 //
-
+local order = 0 
 class UserConfig {
 	
 	</ label="Selected System", 
 		help="Selecting auto will allow you to use this one theme folder for multiple systems (you must name your lists to match the system folders listed in this theme). Selecting a specific system name is useful if you are using multiple copies of this theme to handle different systems. ", 
-		order=1, 
+		order=order++, 
 		options="auto, Atari 2600, Intellivision, Nintendo 64, Nintendo NES, Nintendo SNES, ScummVM, Sega Genesis, Sony Playstation, Generic TV, Generic PC" /> 
 		selected_system="auto"; 
 	
 	</ label="Game Titles", 
 		help="Select game title style", 
-		order=2, 
+		order=order++, 
 		options="show wheel images, text titles, no titles" /> 
 		game_titles="show wheel images";
 		
 	</ label="Show Playtime", 
 		help="Show game playtime", 
-		order=3, 
+		order=order++, 
 		options="yes, no" /> 
 		show_playtime="no"; 
 	
 	</ label="Cartridge Folder", 
 		help="Choose folder that stores Cartridge art. Not all consoles use cartridge art.", 
-		order=4, 
+		order=order++, 
 		options="cartridge, marquee, none" /> 
 		cartridge_folder="marquee"; 
 		
 	</ label="Boxart Folder", 
 		help="Choose folder that stores Boxart Images", 
-		order=5, 
+		order=order++, 
 		options="boxart, flyer, none" /> 
 		boxart_folder = "flyer"; 
 	
 	</ label="Boxart Shadows", 
 		help="Show shadows underneath boxart", 
-		order=6, 
+		order=order++, 
 		options="yes, no" /> 
 		boxart_shadows="yes"; 
 
     </ label="Scaling", 
 		help="Controls how the layout should be scaled. Stretch will fill the entire space. Scale will scale up/down to fit the space with potential cropping of non-critical elements (eg. backgrounds).", 
 		options="stretch,scale,no scale", 
-		order=3 /> 
+		order=order++ /> 
 		scale="stretch";
 				
 }
  
   
 local config = fe.get_config();
-
-// layout was built in photoshop. all numbers in this used are based off of the photoshop file's size. 
-local base_width = 1440.0; // make sure this number is followed by .0 to make it a float. 
-local base_height = 1080.0; // see note above. 
-
+ 
 // modules
 fe.load_module("fade");
 fe.load_module("file"); 
 fe.load_module("preserve-art"); 
+fe.load_module("pos") // positioning & scaling module
 
-local scale = config["scale"];
+// stretched positioning
+local posData =  {
+    base_width = 1440.0,
+    base_height = 1080.0,
+    layout_width = fe.layout.width,
+    layout_height = fe.layout.height,
+    scale= config['scale'],
+    debug = true,
+}
+local pos = Pos(posData)
 
-// width conversion factor
-local xconv = fe.layout.width / base_width; 
-// height conversion factor
-local yconv = fe.layout.height / base_height; 
-if (scale=="scale")
-{
-	if (fe.layout.height < base_height)
-	{
-		xconv = yconv; 
-	}
-	else
-	{
-		yconv = xconv; 
-	}
-}
-
-if (scale=="no scale")
-{
-	xconv = 1; 
-	yconv = 1; 
-}
-
-// get a width value converted using conversion factor
-function width( num )
-{	
-    return num * xconv; 
-}
-// get a height value converted using conversion factor
-function height( num )
-{
-    return num * yconv; 
-}
- 
-// get a x position converted using conversion factor
- 
-function xpos( num, float = "left", right_num=0, object_width=0)
-{
-	if (scale=="stretch" || scale=="no scale")
-	{
-	    return num * xconv; 
-	}
-	else
-	{
-		if (float == "left")
-		{
-			return num * xconv; 
-		}
-		else
-		{
-			local size_difference = 0; 
-			if (base_width > fe.layout.width)
-			{
-				size_difference = base_width - fe.layout.width; 
-			}
-			return (fe.layout.width - (object_width*xconv)-(right_num * xconv) - size_difference); 
-		}
-	}
-} 
-
- 
- // get the y position value converted using conversion factor
-function ypos( num, float = "top"  )
-{
-	if (scale=="stretch")
-	{
-		return num * yconv; 
-	}
-	else
-	{
-		if (float == "top")
-		{
-			return num * yconv; 
-		}
-		else
-		{
-			if (base_height > fe.layout.height)
-			{
-				// if base width is larger than layout width, 
-				// assume the image/item should just be cropped on the right, rather than slid to the left possibly causing overlap
-				return ( (base_height - fe.layout.height) + num); 
-			}
-			else
-			{
-				return num * yconv; 
-			}
-		}
-	}
-}
 function random(minNum, maxNum) {
     return floor(((rand() % 1000 ) / 1000.0) * (maxNum - (minNum - 1)) + minNum);
 }
@@ -217,21 +135,21 @@ function on_transition(ttype, var, ttime) {
    return false;
 }
 
-local testo = fe.add_text(console, xpos(10), ypos(10), width(1000), height(400));  
+local testo = fe.add_text(console, pos.x(10), pos.y(10), pos.width(1000), pos.height(400));  
 testo.charsize=36; 
 testo.set_rgb(247,35,0); 
  
 function set_titles( unused )
 {
 	// Title
-	local title = fe.add_text("[Title]", xpos(18), ypos(18), width(317), height(32));
+	local title = fe.add_text("[Title]", pos.x(18), pos.y(18), pos.width(317), pos.height(32));
 	title.charsize = 24;
 	title.set_rgb(247, 35, 0);
 	title.font =  console + "/" + "font"; 
 } 
  
 //Background
-local bg = fe.add_image(console + "/" + "bg.jpg", 0,0, width(1920), height(1080) );
+local bg = fe.add_image(console + "/" + "bg.jpg", 0,0, pos.width(1920), pos.height(1080) );
 
 
 local snap_x = 361;
@@ -363,11 +281,11 @@ if (config["boxart_folder"] !="none")
 {
 	if (config["boxart_shadows"] == "yes")
 	{
-		local box_shadow = fe.add_image(console + "/" + "box_shadow.png", 0,0, width(1440), height(1080) );
+		local box_shadow = fe.add_image(console + "/" + "box_shadow.png", 0,0, pos.width(1440), pos.height(1080) );
 		box_shadow.preserve_aspect_ratio = true;
 	}
 
-	local boxart = fe.add_artwork(config["boxart_folder"], xpos(boxart_x), ypos(boxart_y), width(boxart_width), height(boxart_height));
+	local boxart = fe.add_artwork(config["boxart_folder"], pos.x(boxart_x), pos.y(boxart_y), pos.width(boxart_width), pos.height(boxart_height));
 	boxart.preserve_aspect_ratio = false;
 	boxart.trigger = Transition.EndNavigation;
 }
@@ -380,14 +298,14 @@ if (config["boxart_folder"] !="none")
 if ( config["game_titles"] == "show wheel images" )
 {
 	// wheel
-	local wheel = fe.add_artwork("wheel", xpos(wheel_x), ypos(wheel_y), width(wheel_width), height(wheel_height));
+	local wheel = fe.add_artwork("wheel", pos.x(wheel_x), pos.y(wheel_y), pos.width(wheel_width), pos.height(wheel_height));
 	wheel.preserve_aspect_ratio = true;
 	wheel.trigger = Transition.EndNavigation;
 	
 }
 if (config["game_titles"] =="text titles"){
 	// Title
-	local title = fe.add_text("[Title]", xpos(1067), ypos(978), width(244), height(181));
+	local title = fe.add_text("[Title]", pos.x(1067), pos.y(978), pos.width(244), pos.height(181));
 	title.align = Align.Right;
 	title.charsize = 24;
 	title.set_rgb(247, 35, 0);
@@ -403,7 +321,7 @@ if (config["game_titles"] =="text titles"){
 if (config["show_playtime"] == "yes")
 {
 	// Playtime
-	local playtime = fe.add_text("[Title] Playcount:[PlayedCount] Time:[PlayedTime]", xpos(16), ypos(993), width(700),height(39));
+	local playtime = fe.add_text("[Title] Playcount:[PlayedCount] Time:[PlayedTime]", pos.x(16), pos.y(993), pos.width(700),pos.height(39));
 	playtime.align = Align.Left;
 	playtime.charsize = 20;
 	playtime.set_rgb(255, 255, 255);
@@ -413,18 +331,18 @@ if (config["show_playtime"] == "yes")
 //		SNAP & SNAP OVERLAYS
 ///////////////////////////////////////////////////////
 
-local snap = fe.add_artwork("snap", xpos(snap_x), ypos(snap_y), width(snap_w), height(snap_h));
+local snap = fe.add_artwork("snap", pos.x(snap_x), pos.y(snap_y), pos.width(snap_w), pos.height(snap_h));
 snap.trigger = Transition.EndNavigation;
 
 if (console != "scummvm")
 {
 	// Scanlines
-	local scanlines = fe.add_image("scanlines.png", xpos(snap_x), ypos(snap_y), width(snap_w), height(snap_h));
+	local scanlines = fe.add_image("scanlines.png", pos.x(snap_x), pos.y(snap_y), pos.width(snap_w), pos.height(snap_h));
 	scanlines.preserve_aspect_ratio = false;
 	scanlines.alpha = 130;
 
 	// TV Borders
-	local borders = fe.add_image("borders.png", xpos(snap_x), ypos(snap_y), width(snap_w), height(snap_h));
+	local borders = fe.add_image("borders.png", pos.x(snap_x), pos.y(snap_y), pos.width(snap_w), pos.height(snap_h));
 	borders.preserve_aspect_ratio = false;
 }
 
@@ -434,7 +352,7 @@ if (console != "scummvm")
 
 if (config["cartridge_folder"] !="none")
 {
-	local cartridge = fe.add_artwork(config["cartridge_folder"], xpos(cart_x), ypos(cart_y), width(cart_width), height(cart_height));
+	local cartridge = fe.add_artwork(config["cartridge_folder"], pos.x(cart_x), pos.y(cart_y), pos.width(cart_width), pos.height(cart_height));
 	cartridge.preserve_aspect_ratio = true;
 
 	if (cart_preserve_aspect_ratio == false)
@@ -459,7 +377,7 @@ if (config["cartridge_folder"] !="none")
 //		IMAGE OVERLAYS / CART MASKS
 ///////////////////////////////////////////////////////
 
-local overlay = fe.add_image(console + "/"+"foreground.png", 0, 0, width(1440), height(1080));
+local overlay = fe.add_image(console + "/"+"foreground.png", 0, 0, pos.width(1440), pos.height(1080));
 overlay.preserve_aspect_ratio = true;
  
 
@@ -479,7 +397,7 @@ local fullpathfilename = console + "/" + "box_shadow.png";
 
 if (file_exists(fullpathfilename))
 {
-	local flyer_shadow = fe.add_image(console + "/" + "box_shadow.png", 0,0, width(1440), height(1080) );
+	local flyer_shadow = fe.add_image(console + "/" + "box_shadow.png", 0,0, pos.width(1440), pos.height(1080) );
 	flyer_shadow.preserve_aspect_ratio = true;
 }
 */
